@@ -1,71 +1,52 @@
 import React, { Component }   from 'react';
 import { connect }            from 'react-redux';
 import { bindActionCreators } from 'redux';
-import extend                 from 'lodash/extend';
+import uniqueId from 'lodash/uniqueId';
+import extend from 'lodash/extend';
 
-export const mapStateToProps = (mapping, state) => {
-  return (state, props) => {
-    let payload = {};
-    Object.keys(mapping).forEach((propKey) => {
-      if (mapping[propKey].hasOwnProperty('selector')) {
-        payload[propKey] = mapping[propKey].selector.call(this, state, props);
-      } else {
-        throw new Error("Missing selector for key: " + propKey);
-      }
-    });
-    return payload;
-  }
-}
+import {
+  mapStateToProps,
+  pickAllActions,
+  fetchKey
+} from './utils';
 
-export const pickAllActions = (mapping) => {
-  let actions = [];
-  Object.keys(mapping).forEach((propKey) => {
-    let item    = mapping[propKey];
-    let action  = item.action;
-    if (action) {
-      if (!action.hasOwnProperty("name")) {
-        throw new Error("Your ReduxDataConnect action is missing a name property. Your actoun must be an object like: {name: \"myActionName\", fnc: myActionFunc}");
-      }
-      if (!action.hasOwnProperty("fnc")) {
-        throw new Error("Your ReduxDataConnect action is missing a fnc property. Your actoun must be an object like: {name: \"myActionName\", fnc: myActionFunc}");
-      }
+import {
+  registerDataConnection,
+  updateDataConnect,
+  reducer
+} from './modules';
 
-      actions.push(extend({}, action, {
-        prop: propKey
-      }));
-    }
-  });
+export { reducer as dataConnectReducer };
 
-  return actions;
-}
-
-export default ( mapping = {} ) => {
+export default ( mapping = {}, additionalActions = {}) => {
   return WrappedComponent => {
 
     class ReduxDataConnect extends Component {
 
       constructor(props) {
         super(props);
+        this._id     = uniqueId("redux_data_connect_");
         this.actions = pickAllActions(mapping);
         this.fetches = {};
         this.state   = {};
       }
 
       updateFetchState( key, fetchItem, err ) {
-        const newKey = `fetch:${key}`;
-        this.setState({
-          [newKey]: {
-            isPending:    fetchItem.isPending(),
-            isRejected:   fetchItem.isRejected(),
-            isFulfilled:  fetchItem.isFulfilled(),
-            error:        err
-          }
-        });
+        // const newKey = fetchKey(key);
+        const { dispatch }  = this.context.store;
+        dispatch(updateDataConnect(this._id, key, {
+          isPending:    fetchItem.isPending(),
+          isRejected:   fetchItem.isRejected(),
+          isFulfilled:  fetchItem.isFulfilled(),
+          error:        err
+        }));
       }
 
       componentWillMount() {
-        const { dispatch } = this.context.store;
-        const hocProps = this.props;
+        const { dispatch }  = this.context.store;
+        dispatch(registerDataConnection(this._id));
+
+        const hocProps      = this.props;
         // fire all actions from mapping
         this.actions.forEach((action) => {
           let result = this.fetches[action.prop] = dispatch(action.fnc.apply(this. hocProps));
@@ -82,14 +63,15 @@ export default ( mapping = {} ) => {
       }
 
       render() {
-        console.log("PROPS", this.props);
         const { props } = this;
         let mappedProps = {};
-
         Object.keys(mapping).forEach((propKey) => {
+
+          let connectState = this.props.reduxDataConnect[this._id];
+
           mappedProps[propKey] = {
             data:     props[propKey],
-            request:  this.state[`fetch:${propKey}`]
+            request:  (connectState) ? connectState[propKey] : null
           }
         });
 
@@ -116,6 +98,9 @@ export default ( mapping = {} ) => {
         actions.forEach((action) => {
           payload[action.name] = action.fnc
         });
+
+        extend(payload, additionalActions);
+
         return { actions: bindActionCreators(payload, dispatch)};
       }
     )(ReduxDataConnect);
