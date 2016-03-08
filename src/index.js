@@ -46,7 +46,7 @@ export default ( mapping = {}, additionalActions = {}) => {
         const hocProps      = this.props;
         // fire all actions from mapping
         this.actions.forEach((action) => {
-          let result = this.fetches[action.prop] = dispatch(action.fnc.apply(this. hocProps));
+          let result = this.fetches[action.prop] = dispatch(action.fnc.call(this, hocProps));
           if (result.then) {
             this.updateFetchState(action.prop, "pending");
             result
@@ -82,7 +82,7 @@ export default ( mapping = {}, additionalActions = {}) => {
           if (!mappedProps.hasOwnProperty(ownProp)) {
             mappedProps[ownProp] = props[ownProp];
           }
-        })
+        });
 
         return <WrappedComponent {...mappedProps} />;
       }
