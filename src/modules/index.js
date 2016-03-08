@@ -15,10 +15,10 @@ export const registerDataConnection = ( id ) => {
   }
 }
 
-export const updateDataConnect = (id, propKey, requestData) => {
+export const updateDataConnect = (id, propKey, status, err) => {
   return {
     type: UPDATE_DATA_CONNECT,
-    payload: { id, propKey, requestData }
+    payload: { id, propKey, status, err }
   }
 }
 
@@ -44,7 +44,12 @@ export const reducer = ( state = {}, {type, payload}) => {
       let stateCopy = extend({}, state);
       stateCopy[payload.id] = stateCopy[payload.id] || {};
       extend(stateCopy[payload.id], {
-        [payload.propKey]: payload.requestData
+        [payload.propKey]: {
+          isPending:    (payload.status === "pending") ? true : false,
+          isFulfilled:  (payload.status === "fulfilled") ? true : false,
+          isRejected:   (payload.status === "rejected") ? true : false,
+          err:          payload.err
+        }
       });
       return stateCopy;
       break;
