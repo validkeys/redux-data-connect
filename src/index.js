@@ -31,15 +31,9 @@ export default ( mapping = {}, additionalActions = {}) => {
         this.state   = {};
       }
 
-      updateFetchState( key, fetchItem, err ) {
-        // const newKey = fetchKey(key);
+      updateFetchState( key, status, err ) {
         const { dispatch }  = this.context.store;
-        dispatch(updateDataConnect(this._id, key, {
-          isPending:    fetchItem.isPending(),
-          isRejected:   fetchItem.isRejected(),
-          isFulfilled:  fetchItem.isFulfilled(),
-          error:        err
-        }));
+        dispatch(updateDataConnect(this._id, key, status, err));
       }
 
       componentWillMount() {
@@ -51,12 +45,12 @@ export default ( mapping = {}, additionalActions = {}) => {
         this.actions.forEach((action) => {
           let result = this.fetches[action.prop] = dispatch(action.fnc.apply(this. hocProps));
           if (result.then) {
-            this.updateFetchState(action.prop, result)
+            this.updateFetchState(action.prop, "pending");
             result
               .then(() => {
-                this.updateFetchState(action.prop, result);
+                this.updateFetchState(action.prop, "fulfilled");
               }).catch((err) => {
-                this.updateFetchState(action.prop, result, err);
+                this.updateFetchState(action.prop, "rejected", err);
               })
           }
         });
