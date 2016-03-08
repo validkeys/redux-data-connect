@@ -1,6 +1,13 @@
 ```
 import ReduxDataConnect, { dataConnectReducer } from 'redux-data-connect';
 
+const anotherAction = ( props ) => {
+  return {
+    type: "SOMETHING",
+    payload: { id: props.id }
+  }
+}
+
 const dumbComponent = (props) => {
   return (
     <div>My DumbComponent</div>
@@ -21,13 +28,30 @@ const dumbComponent = (props) => {
 }
 
 const DataConnectedComponent = (
+  // first argument is an object for each data property your component needs
+  // each prop should contain a selector and an action
+  // the selector is the function that will parse the state to grab the data
+  // your component needs. The action is a dataLoading action that will be automatically
+  // fired when your component mounts to fetch data from the server.
+  //
+  // Each action requires a name and a corresponding function
+  // Each action will be automatically called to fetch data and
+  // will also be made available for your UI to call manually via the
+  // this.props.actions property in your component.
   {
     users: {
       selector: (state, props) => state.users,
-      action:   (props) => this.props.actions.loadUsers()
+      action:   {
+        name: "fetchUsers",
+        fnc:  (props) => this.props.actions.loadUsers()
+      }
     }
   }
-)(dumbComponent)
+
+  // as a second argument, you can pass in additional actions
+  // these will simply be added to your component's actions property
+  // and pre-bound to dispatch for you
+, { anotherAction, aSecondAction })(dumbComponent)
 ```
 
 

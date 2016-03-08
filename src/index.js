@@ -54,12 +54,18 @@ export default ( mapping = {}, additionalActions = {}) => {
             this.updateFetchState(action.prop, result)
             result
               .then(() => {
-                this.updateFetchState(action.prop, result)
+                this.updateFetchState(action.prop, result);
               }).catch((err) => {
                 this.updateFetchState(action.prop, result, err);
               })
           }
         });
+      }
+
+
+      componentWillUnmount() {
+        const { dispatch }  = this.context.store;
+        dispatch(unregisterDataConnection(this._id));
       }
 
       render() {
