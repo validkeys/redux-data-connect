@@ -1,3 +1,22 @@
+### Redux Data Connect
+#### An alpha lib w/ no tests
+
+A declarative way to specify the data that your component needs as well as the actions to fetch that data.
+
+Let's suppose that you have 5 components rendered on the page at a given time. Each of those components requires
+lots of different data, but they all require data from a /users endpoint. Each component requires different
+data from the users endpoint.
+
+Typically in a Redux application, you'd have the following action(types) fire when each component loads:
+
+USERS_REQUEST > USERS_SUCCESS | USERS_FAILURE (amongst others)
+
+The USERS_REQUEST action gets fired when each of your components mounts and dispatches their data request action (because they each need user data). But you have 5 components each hitting the users endpoint, each firing USERS_REQUEST > USERS_SUCCESS | USERS_FAILURE. So which should your component listen to?
+
+Your component should only care about the data that it needs -- not a global loading state of data _like_ what it needs. ReduxDataConnect allows you to specify the data that your component needs and the action required to fetch that data. RDC then handles the fetching of the data for you but also lets your component know the state of each of it's requests.
+
+
+
 ```
 import ReduxDataConnect, { dataConnectReducer } from 'redux-data-connect';
 
@@ -27,7 +46,7 @@ const dumbComponent = (props) => {
   );
 }
 
-const DataConnectedComponent = (
+const DataConnectedComponent = ReduxDataConnect(
   // first argument is an object for each data property your component needs
   // each prop should contain a selector and an action
   // the selector is the function that will parse the state to grab the data
@@ -69,3 +88,16 @@ this.props.users = {
 ```
 
 The action that you supply in the config is called in the componentWillMount hook of the HOC (ReduxDataConnect);
+
+
+Here's a few use cases:
+
+```
+if (this.props.users.data.length === 0 && this.props.users.request.isPending) {
+  showLoadingState();
+} elseif (this.props.users.data.length > 0 && this.props.users.request.isPending) {
+  showPartialDataAndLoadingIndicator();
+} elseif (this.props.users.data.length ===0 && this.props.users.request.isRejected) {
+  showErrorState();
+}
+```
