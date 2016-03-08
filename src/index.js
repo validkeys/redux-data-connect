@@ -1,8 +1,8 @@
 import React, { Component }   from 'react';
 import { connect }            from 'react-redux';
 import { bindActionCreators } from 'redux';
-import uniqueId from 'lodash/uniqueId';
-import extend from 'lodash/extend';
+import uniqueId               from 'lodash/uniqueId';
+import extend                 from 'lodash/extend';
 
 import {
   mapStateToProps,
@@ -16,6 +16,9 @@ import {
   reducer
 } from './modules';
 
+// NOTE:
+// reducer needs to be added to consuming application
+// with the key: reduxDataConnect
 export { reducer as dataConnectReducer };
 
 export default ( mapping = {}, additionalActions = {}) => {
