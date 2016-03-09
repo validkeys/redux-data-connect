@@ -1,10 +1,10 @@
 {
   "name": "redux-data-connect",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "watch": {
-    "compile": "{src}/*.js"
+    "compile": "./src/*.js"
   },
   "scripts": {
     "compile": "babel --presets es2015,react -d lib/ src/",

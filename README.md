@@ -57,12 +57,18 @@ const DataConnectedComponent = ReduxDataConnect(
   // Each action will be automatically called to fetch data and
   // will also be made available for your UI to call manually via the
   // this.props.actions property in your component.
+
+  // if an action needs to be recalled when a property changes
+  // simply specify the path to that action's prop dependency
+  // ReduxDataConnect will determine if that property has changed
+  // and will recall the action for you
   {
     users: {
       selector: (state, props) => state.users,
       action:   {
         name: "fetchUsers",
-        fnc:  (props) => this.props.actions.loadUsers()
+        fnc:  (props) => this.props.actions.loadUsers( props.params.organizationId ),
+        deps: ['params.organizationId']
       }
     }
   }

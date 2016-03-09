@@ -3,6 +3,8 @@ import { connect }            from 'react-redux';
 import { bindActionCreators } from 'redux';
 import uniqueId               from 'lodash/uniqueId';
 import extend                 from 'lodash/extend';
+import some                   from 'lodash/some';
+import get                    from 'lodash/get';
 
 import {
   mapStateToProps,
@@ -39,22 +41,40 @@ export default ( mapping = {}, additionalActions = {}) => {
         dispatch(updateDataConnect(this._id, key, status, err));
       }
 
+      // TODO:
+      // * would be nice to 'queue' the actions here to avoid multiple calls
+      fireAction( action, props = this.props ) {
+        const { dispatch }  = this.context.store;
+        const hocProps      = props;
+        let result          = this.fetches[action.prop] = dispatch(action.fnc.call(this, hocProps));
+
+        if (result.then) {
+          this.updateFetchState(action.prop, "pending");
+          result
+            .then(() => this.updateFetchState(action.prop, "fulfilled"))
+            .catch((err) => this.updateFetchState(action.prop, "rejected", err))
+        }
+      }
+
       componentWillMount() {
         const { dispatch }  = this.context.store;
         dispatch(registerDataConnection(this._id));
 
-        const hocProps      = this.props;
         // fire all actions from mapping
         this.actions.forEach((action) => {
-          let result = this.fetches[action.prop] = dispatch(action.fnc.call(this, hocProps));
-          if (result.then) {
-            this.updateFetchState(action.prop, "pending");
-            result
-              .then(() => {
-                this.updateFetchState(action.prop, "fulfilled");
-              }).catch((err) => {
-                this.updateFetchState(action.prop, "rejected", err);
-              })
+          this.fireAction(action);
+        });
+      }
+
+      componentWillReceiveProps( nextProps ){
+        this.actions.forEach((action) => {
+          if (action.hasOwnProperty("deps")) {
+            let depsHaveChanged = some(action.deps, (dep) => {
+              return get(this.props, dep) !== get(nextProps, dep);
+            })
+            if (depsHaveChanged){
+              this.fireAction(action, nextProps);
+            }
           }
         });
       }
@@ -68,11 +88,10 @@ export default ( mapping = {}, additionalActions = {}) => {
       render() {
         const { props } = this;
         let mappedProps = {};
+
         Object.keys(mapping).forEach((propKey) => {
-
-          let connectState = this.props.reduxDataConnect[this._id];
-
-          mappedProps[propKey] = {
+          let connectState      = this.props.reduxDataConnect[this._id];
+          mappedProps[propKey]  = {
             data:     props[propKey],
             request:  (connectState) ? connectState[propKey] : null
           }
