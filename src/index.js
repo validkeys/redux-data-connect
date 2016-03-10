@@ -15,6 +15,7 @@ import {
 import {
   registerDataConnection,
   updateDataConnect,
+  unregisterDataConnection,
   reducer
 } from './modules';
 
